@@ -1,8 +1,17 @@
 .gigCard {
   width: 324px;
-  height: 400px;
+  height: 597px;
   border: 1px solid rgb(228, 228, 228);
   margin-bottom: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
 
   img {
     width: 100%;
@@ -29,12 +38,15 @@
       }
 
       span {
-        // Add styles if needed
+        font-weight: 500;
+        color: #333;
       }
     }
 
     p {
       color: #111;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .star {
@@ -45,14 +57,12 @@
       img {
         height: 14px;
         width: 14px;
-        // Optional: filter to make the star image gray if needed
-        // filter: grayscale(100%);
       }
 
       span {
         font-size: 14px;
         font-weight: bold;
-        color: #000;  // Set the number color to plain black
+        color: #000;
       }
     }
   }
@@ -65,32 +75,71 @@
   .detail {
     padding: 10px 20px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    img {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      object-fit: cover;
-    }
+    flex-direction: column;
+    gap: 15px;
 
     .price {
-      span {
-        color: #999;
-        font-size: 12px;
-      }
-
       h2 {
         color: #555;
         font-size: 18px;
         font-weight: 400;
-        text-align: end;
+        text-align: center;
       }
 
       sup {
         font-size: 12px;
         font-weight: 300;
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-direction: column;
+
+      button {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+      }
+
+      .view-details-btn {
+        background: #f8f9fa;
+        color: #495057;
+        border: 1px solid #dee2e6;
+
+        &:hover {
+          background: #e9ecef;
+          color: #343a40;
+        }
+      }
+
+      .hire-btn {
+        background: #1DBF73;
+        color: white;
+
+        &:hover:not(.disabled):not(:disabled) {
+          background: #19a463;
+        }
+
+        &.disabled {
+          background: #6c757d;
+          cursor: not-allowed;
+        }
       }
     }
   }

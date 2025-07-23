@@ -1,12 +1,12 @@
-import express from "express";
-import { verifyToken } from "../middleware/jwt.js";
-import {
+const express = require("express");
+const { verifyToken } = require("../middleware/jwt.js");
+const {
   getMyOrders,
   getReceivedOrders,
   intent,
   confirm,
   updateOrderStatus,
-} from "../controllers/order.controller.js";
+} = require("../controllers/order.controller.js");
 
 const router = express.Router();
 
@@ -25,4 +25,4 @@ router.put("/", verifyToken, confirm);
 // Route for updating the status of an order
 router.patch("/:id", verifyToken, updateOrderStatus);
 
-export default router;
+module.exports = router;

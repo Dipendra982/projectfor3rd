@@ -17,7 +17,7 @@ async function testEmail() {
   if (connectionTest) {
     console.log('\n📧 Sending test verification email...');
     const result = await emailService.sendVerificationEmail(
-      'test@example.com', // This won't actually send since it's a test email
+      process.env.EMAIL_USER, // Send to the same email address for testing
       'TestUser',
       'test-token-123'
     );

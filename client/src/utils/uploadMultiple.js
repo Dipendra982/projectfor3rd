@@ -1,6 +1,11 @@
 import axios from "axios";
 
 const uploadMultiple = async (files) => {
+  // If no files, return empty array
+  if (!files || files.length === 0) {
+    return [];
+  }
+
   const data = new FormData();
   
   // Add all files to the form data

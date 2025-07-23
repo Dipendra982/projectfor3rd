@@ -1,81 +1,75 @@
-import createError from "../utils/createError.js";
-import { prisma } from "../config/database.js";
-import Stripe from "stripe";
+const createError = require("../utils/createError.js");
+const { Order, Gig, User } = require("../models/index.js");
 
-// Intent to create a payment and order
-export const intent = async (req, res, next) => {
+// Create a direct order (without payment processing)
+const createOrder = async (req, res, next) => {
   try {
-    const stripe = new Stripe(process.env.STRIPE);
-
-    const gig = await prisma.gig.findUnique({
-      where: { id: req.params.id }
-    });
-
+    const gigId = req.params.id;
+    
+    const gig = await Gig.findByPk(gigId);
     if (!gig) {
       return next(createError(404, "Gig not found!"));
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: gig.price * 100,
-      currency: "usd",
-      automatic_payment_methods: {
-        enabled: true,
-      },
+    // Check if user is trying to hire their own service
+    if (gig.userId === req.userId) {
+      return next(createError(400, "You cannot hire your own service!"));
+    }
+
+    // Create the order directly
+    const newOrder = await Order.create({
+      id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      gigId: gig.id,
+      img: gig.cover,
+      title: gig.title,
+      buyerId: req.userId,
+      sellerId: gig.userId,
+      price: gig.price,
+      isCompleted: true, // Direct completion since no payment processing
+      payment_intent: `direct_${Date.now()}`
     });
 
-    const newOrder = await prisma.order.create({
-      data: {
-        gigId: gig.id,
-        img: gig.cover,
-        title: gig.title,
-        buyerId: req.userId,
-        sellerId: gig.userId,
-        price: gig.price,
-        paymentIntent: paymentIntent.id,
-        status: 'PENDING',
-      }
-    });
+    // Update gig sales count
+    await Gig.update(
+      { sales: gig.sales + 1 },
+      { where: { id: gigId } }
+    );
 
-    res.status(200).send({
-      clientSecret: paymentIntent.client_secret,
+    res.status(201).json({
+      success: true,
+      message: "Order created successfully!",
+      order: newOrder
     });
   } catch (err) {
     next(err);
-  }
+  };
 };
 
 // Get the orders the user has placed (My Orders)
-export const getMyOrders = async (req, res, next) => {
+const getMyOrders = async (req, res, next) => {
   try {
-    const myOrders = await prisma.order.findMany({
+    const myOrders = await Order.findAll({
       where: {
         buyerId: req.userId,
         isCompleted: true,
       },
-      include: {
-        buyer: {
-          select: {
-            id: true,
-            username: true,
-            img: true,
-          }
+      include: [
+        {
+          model: User,
+          as: 'buyer',
+          attributes: ['id', 'username', 'img']
         },
-        seller: {
-          select: {
-            id: true,
-            username: true,
-            img: true,
-          }
+        {
+          model: User,
+          as: 'seller',
+          attributes: ['id', 'username', 'img']
         },
-        gig: {
-          select: {
-            id: true,
-            title: true,
-            cover: true,
-            price: true,
-          }
+        {
+          model: Gig,
+          as: 'gig',
+          attributes: ['id', 'title', 'cover', 'price']
         }
-      }
+      ]
     });
 
     res.status(200).send(myOrders);
@@ -85,7 +79,7 @@ export const getMyOrders = async (req, res, next) => {
 };
 
 // Get the orders the user has received (Received Orders for Sellers)
-export const getReceivedOrders = async (req, res, next) => {
+const getReceivedOrders = async (req, res, next) => {
   try {
     // Ensure the user is a seller
     if (!req.isSeller) {
@@ -94,35 +88,28 @@ export const getReceivedOrders = async (req, res, next) => {
       );
     }
 
-    const receivedOrders = await prisma.order.findMany({
+    const receivedOrders = await Order.findAll({
       where: {
         sellerId: req.userId,
         isCompleted: true,
       },
-      include: {
-        buyer: {
-          select: {
-            id: true,
-            username: true,
-            img: true,
-          }
+      include: [
+        {
+          model: User,
+          as: 'buyer',
+          attributes: ['id', 'username', 'img']
         },
-        seller: {
-          select: {
-            id: true,
-            username: true,
-            img: true,
-          }
+        {
+          model: User,
+          as: 'seller',
+          attributes: ['id', 'username', 'img']
         },
-        gig: {
-          select: {
-            id: true,
-            title: true,
-            cover: true,
-            price: true,
-          }
+        {
+          model: Gig,
+          as: 'gig',
+          attributes: ['id', 'title', 'cover', 'price']
         }
-      }
+      ]
     });
 
     res.status(200).send(receivedOrders);
@@ -131,22 +118,20 @@ export const getReceivedOrders = async (req, res, next) => {
   }
 };
 
-// Confirm the order after payment
-export const confirm = async (req, res, next) => {
+// Confirm the order (simplified without Stripe)
+const confirm = async (req, res, next) => {
   try {
-    const order = await prisma.order.updateMany({
-      where: { 
-        paymentIntent: req.body.payment_intent 
-      },
-      data: { 
-        isCompleted: true,
-        status: 'COMPLETED'
-      }
-    });
-
-    if (order.count === 0) {
+    const { orderId } = req.body;
+    
+    const order = await Order.findByPk(orderId);
+    if (!order) {
       return next(createError(404, "Order not found"));
     }
+
+    await Order.update(
+      { isCompleted: true },
+      { where: { id: orderId } }
+    );
 
     res.status(200).send("Order has been confirmed.");
   } catch (err) {
@@ -155,7 +140,7 @@ export const confirm = async (req, res, next) => {
 };
 
 // Update the status of an order (e.g., from "PENDING" to "COMPLETED")
-export const updateOrderStatus = async (req, res, next) => {
+const updateOrderStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -166,9 +151,7 @@ export const updateOrderStatus = async (req, res, next) => {
     }
 
     // Find the order by ID
-    const order = await prisma.order.findUnique({
-      where: { id }
-    });
+    const order = await Order.findByPk(id);
 
     if (!order) {
       return next(createError(404, "Order not found"));
@@ -184,16 +167,21 @@ export const updateOrderStatus = async (req, res, next) => {
     }
 
     // Update the order status
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: { 
-        status,
-        isCompleted: status === 'COMPLETED'
-      }
-    });
+    await Order.update(
+      { isCompleted: status === 'COMPLETED' },
+      { where: { id } }
+    );
 
     res.status(200).send("Order status updated successfully");
   } catch (err) {
     next(err);
   }
+};
+
+module.exports = {
+  createOrder,
+  getMyOrders,
+  getReceivedOrders,
+  confirm,
+  updateOrderStatus,
 };

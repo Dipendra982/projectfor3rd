@@ -24,15 +24,28 @@ const Add = () => {
   };
 
   const handleUpload = async () => {
+    if (!singleFile) {
+      toast.error("Please select a cover image!");
+      return;
+    }
+
     setUploading(true);
     try {
+      console.log("Starting upload...");
+      console.log("Single file:", singleFile);
+      console.log("Multiple files:", files);
+      
       const cover = await upload(singleFile);
-      const images = await uploadMultiple([...files]);
+      console.log("Cover uploaded:", cover);
+      
+      const images = files && files.length > 0 ? await uploadMultiple([...files]) : [];
+      console.log("Images uploaded:", images);
       
       setUploading(false);
       dispatch({ type: "ADD_IMAGES", payload: { cover, images } });
+      toast.success("Images uploaded successfully!");
     } catch (err) {
-      console.log(err);
+      console.log("Upload error:", err);
       setUploading(false);
       toast.error("Upload failed. Please try again.");
     }
@@ -58,6 +71,7 @@ const Add = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("Submitting gig with state:", state);
     mutation.mutate(state);
   };
 
@@ -106,9 +120,37 @@ const Add = () => {
                   required
                 />
               </div>
-              <button onClick={handleUpload}>
+              <button type="button" onClick={handleUpload} disabled={uploading}>
                 {uploading ? "uploading" : "Upload"}
               </button>
+              
+              {/* Preview uploaded images */}
+              {state.cover && (
+                <div className="uploaded-images">
+                  <h4>Cover Image:</h4>
+                  <img 
+                    src={`http://localhost:8800${state.cover}`} 
+                    alt="Cover" 
+                    style={{width: '100px', height: '100px', objectFit: 'cover', marginRight: '10px'}}
+                  />
+                </div>
+              )}
+              
+              {state.images && state.images.length > 0 && (
+                <div className="uploaded-images">
+                  <h4>Additional Images:</h4>
+                  <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px'}}>
+                    {state.images.map((img, index) => (
+                      <img 
+                        key={index}
+                        src={`http://localhost:8800${img}`} 
+                        alt={`Image ${index + 1}`} 
+                        style={{width: '100px', height: '100px', objectFit: 'cover'}}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <label htmlFor="">Description</label>
             <textarea
@@ -135,7 +177,13 @@ const Add = () => {
               name="price"
               required
             />
-            <button onClick={handleSubmit}>Create</button>
+            <button 
+              type="submit" 
+              onClick={handleSubmit}
+              disabled={mutation.isPending || !state.cover}
+            >
+              {mutation.isPending ? "Creating..." : "Create"}
+            </button>
           </div>
         </div>
       </div>

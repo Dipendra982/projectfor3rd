@@ -17,7 +17,7 @@ const Orders = () => {
   // Fetch orders the user has placed
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["myOrders"],
-    queryFn: () => newRequest.get(`/orders/my-orders`).then((res) => res.data),
+    queryFn: () => newRequest.get(`/hire/my-orders`).then((res) => res.data),
   });
 
   // Filter and sort orders
@@ -25,12 +25,11 @@ const Orders = () => {
     if (!data) return [];
     
     let filtered = data.filter(order => {
-      const matchesStatus = !filterStatus || order.status === filterStatus;
       const matchesSearch = !searchTerm || 
         order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.sellerId.username.toLowerCase().includes(searchTerm.toLowerCase());
+        order.seller?.username.toLowerCase().includes(searchTerm.toLowerCase());
       
-      return matchesStatus && matchesSearch;
+      return matchesSearch;
     });
 
     return filtered.sort((a, b) => {
@@ -38,8 +37,8 @@ const Orders = () => {
       let bValue = b[sortBy];
       
       if (sortBy === 'seller') {
-        aValue = a.sellerId.username;
-        bValue = b.sellerId.username;
+        aValue = a.seller?.username || '';
+        bValue = b.seller?.username || '';
       }
       
       if (typeof aValue === 'string') {
@@ -53,11 +52,16 @@ const Orders = () => {
         return aValue < bValue ? 1 : -1;
       }
     });
-  }, [data, filterStatus, sortBy, sortOrder, searchTerm]);
+  }, [data, sortBy, sortOrder, searchTerm]);
 
   const handleContact = async (order) => {
-    const sellerId = order.sellerId._id;
-    const buyerId = order.buyerId._id;
+    const sellerId = order.seller?._id || order.seller?.id;
+    const buyerId = order.buyer?.id || order.buyer?.id || currentUser.id;
+
+    if (!sellerId) {
+      toast.error("Seller information not available");
+      return;
+    }
 
     // Ensure you are setting the conversation ID based on the correct user roles
     const id = sellerId < buyerId ? sellerId + buyerId : buyerId + sellerId;
@@ -67,13 +71,17 @@ const Orders = () => {
       const res = await newRequest.get(`/conversations/single/${id}`);
       navigate(`/message/${res.data.id}`);
     } catch (err) {
-      if (err.response.status === 404) {
+      if (err.response?.status === 404) {
         // If conversation does not exist, create a new one
-        const res = await newRequest.post(`/conversations/`, {
-          sellerId,
-          buyerId,
-        });
-        navigate(`/message/${res.data.id}`);
+        try {
+          const res = await newRequest.post(`/conversations/`, {
+            sellerId,
+            buyerId,
+          });
+          navigate(`/message/${res.data.id}`);
+        } catch (createErr) {
+          toast.error("Failed to start conversation");
+        }
       } else {
         toast.error("Failed to start conversation");
       }
@@ -134,21 +142,21 @@ const Orders = () => {
               </div>
               <div className="stat-card">
                 <div className="stat-number">
-                  {data.filter(order => order.status === 'completed').length}
+                  {data.filter(order => order.isCompleted).length}
                 </div>
                 <div className="stat-label">Completed</div>
               </div>
               <div className="stat-card">
                 <div className="stat-number">
-                  {data.filter(order => order.status === 'in_progress').length}
+                  {data.filter(order => !order.isCompleted).length}
                 </div>
-                <div className="stat-label">In Progress</div>
+                <div className="stat-label">Pending</div>
               </div>
               <div className="stat-card">
                 <div className="stat-number">
-                  {data.filter(order => order.status === 'pending').length}
+                  ${data.reduce((sum, order) => sum + parseFloat(order.price || 0), 0).toFixed(2)}
                 </div>
-                <div className="stat-label">Pending</div>
+                <div className="stat-label">Total Spent</div>
               </div>
             </div>
           )}
@@ -171,13 +179,9 @@ const Orders = () => {
               value={filterStatus} 
               onChange={(e) => setFilterStatus(e.target.value)}
               className="status-filter"
+              style={{ display: 'none' }} // Hide status filter since we don't have status field
             >
               <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="refunded">Refunded</option>
             </select>
           </div>
 
@@ -191,7 +195,6 @@ const Orders = () => {
                 <option value="createdAt">Date</option>
                 <option value="title">Title</option>
                 <option value="price">Price</option>
-                <option value="status">Status</option>
                 <option value="seller">Seller</option>
               </select>
               
@@ -228,35 +231,22 @@ const Orders = () => {
             <button onClick={() => refetch()}>Try Again</button>
           </div>
         ) : filteredAndSortedOrders.length === 0 ? (
-          <div className="empty-state">
-            {data?.length === 0 ? (
-              <>
-                <img src="/img/no-orders.png" alt="No orders" />
+                        <div className="no-orders">
+                <div className="no-orders-icon">📋</div>
                 <h3>No Orders Yet</h3>
-                <p>You haven't placed any orders yet. Browse our services to get started!</p>
-                <button onClick={() => navigate('/gigs')} className="browse-btn">
-                  Browse Services
-                </button>
-              </>
-            ) : (
-              <>
-                <img src="/img/no-results.png" alt="No results" />
-                <h3>No Matching Orders</h3>
-                <p>Try adjusting your filters or search terms</p>
-                <button onClick={clearFilters} className="clear-filters-btn">
-                  Clear Filters
-                </button>
-              </>
-            )}
-          </div>
+                <p>You haven't hired any services yet. Browse gigs to get started!</p>
+              </div>
         ) : (
           <div className="orders-grid">
             {filteredAndSortedOrders.map((order) => (
-              <div key={order._id} className="order-card">
+              <div key={order.id} className="order-card">
                 <div className="order-image">
                   <img src={getImageUrl(order.img)} alt="" />
-                  <div className="status-badge" style={getStatusBadge(order.status)}>
-                    {order.status.replace('_', ' ')}
+                  <div className="status-badge" style={order.isCompleted ? 
+                    { backgroundColor: "#28a745" } : 
+                    { backgroundColor: "#ffc107" }
+                  }>
+                    {order.isCompleted ? "Completed" : "Pending"}
                   </div>
                 </div>
                 
@@ -266,7 +256,7 @@ const Orders = () => {
                   <div className="order-details">
                     <div className="detail-row">
                       <span className="label">Seller:</span>
-                      <span className="value">{order.sellerId.username}</span>
+                      <span className="value">{order.seller?.username || 'Unknown'}</span>
                     </div>
                     
                     <div className="detail-row">
@@ -284,16 +274,10 @@ const Orders = () => {
                     <button 
                       onClick={() => handleContact(order)}
                       className="contact-btn"
+                      style={{ display: 'none' }} // Hide contact for now since conversation routes are disabled
                     >
                       <img src="/img/message.png" alt="Message" />
                       Contact Seller
-                    </button>
-                    
-                    <button 
-                      onClick={() => navigate(`/gig/${order.gigId}`)}
-                      className="view-gig-btn"
-                    >
-                      View Service
                     </button>
                   </div>
                 </div>
