@@ -28,7 +28,10 @@ function Login() {
       const res = await newRequest.post("/auth/login", { email, password });
       localStorage.setItem("currentUser", JSON.stringify(res.data));
       toast.success("Logged in successfully!");
-      navigate("/");
+      
+      // Redirect to the intended page or home
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
     } catch (err) {
       const errorMessage = err?.response?.data;
       toast.error(errorMessage);

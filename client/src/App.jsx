@@ -16,7 +16,13 @@ import Message from "./pages/message/Message";
 import MyGigs from "./pages/myGigs/MyGigs";
 import EmailVerification from "./pages/emailVerification/EmailVerification";
 import ResendVerification from "./pages/resendVerification/ResendVerification";
+import NotFound from "./pages/notFound/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute/PublicRoute";
+import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Pay from "./pages/pay/Pay";
 import Success from "./pages/success/Success";
 
@@ -25,13 +31,27 @@ function App() {
 
   const Layout = () => {
     return (
-      <div className="app">
-        <QueryClientProvider client={queryClient}>
-          <Navbar />
-          <Outlet />
-          <Footer />
-        </QueryClientProvider>
-      </div>
+      <ErrorBoundary>
+        <div className="app">
+          <QueryClientProvider client={queryClient}>
+            <Navbar />
+            <Outlet />
+            <Footer />
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+            />
+          </QueryClientProvider>
+        </div>
+      </ErrorBoundary>
     );
   };
 
@@ -50,27 +70,51 @@ function App() {
         },
         {
           path: "/myGigs",
-          element: <MyGigs />,
+          element: (
+            <ProtectedRoute>
+              <MyGigs />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/orders",
-          element: <Orders />, // Route for user's placed orders
+          element: (
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/received-orders",
-          element: <ReceivedOrders />, // Route for received orders
+          element: (
+            <ProtectedRoute>
+              <ReceivedOrders />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/messages",
-          element: <Messages />,
+          element: (
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/message/:id",
-          element: <Message />,
+          element: (
+            <ProtectedRoute>
+              <Message />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/add",
-          element: <Add />,
+          element: (
+            <ProtectedRoute>
+              <Add />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/gig/:id",
@@ -78,7 +122,11 @@ function App() {
         },
         {
           path: "/register",
-          element: <Register />,
+          element: (
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          ),
         },
         {
           path: "/verify-email",
@@ -90,15 +138,31 @@ function App() {
         },
         {
           path: "/login",
-          element: <Login />,
+          element: (
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          ),
         },
         {
           path: "/pay/:id",
-          element: <Pay />,
+          element: (
+            <ProtectedRoute>
+              <Pay />
+            </ProtectedRoute>
+          ),
         },
         {
           path: "/success",
-          element: <Success />,
+          element: (
+            <ProtectedRoute>
+              <Success />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "*",
+          element: <NotFound />,
         },
       ],
     },
