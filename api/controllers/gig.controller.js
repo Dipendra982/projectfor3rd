@@ -99,34 +99,52 @@ const getGigs = async (req, res, next) => {
   try {
     const where = {};
 
+    // User filter
     if (q.userId) {
       where.userId = q.userId;
     }
 
+    // Category filter
     if (q.cat) {
       where.cat = q.cat;
     }
 
+    // Price range filter
     if (q.min || q.max) {
       where.price = {};
       if (q.min) where.price[Op.gte] = parseFloat(q.min);
       if (q.max) where.price[Op.lte] = parseFloat(q.max);
     }
 
+    // Delivery time filter
+    if (q.delivery) {
+      where.deliveryTime = { [Op.lte]: parseInt(q.delivery) };
+    }
+
+    // Search filter
     if (q.search) {
       where[Op.or] = [
         { title: { [Op.iLike]: `%${q.search}%` } },
-        { desc: { [Op.iLike]: `%${q.search}%` } }
+        { desc: { [Op.iLike]: `%${q.search}%` } },
+        { shortTitle: { [Op.iLike]: `%${q.search}%` } },
+        { shortDesc: { [Op.iLike]: `%${q.search}%` } }
       ];
     }
 
-    let order = [['createdAt', 'DESC']];
+    // Sorting
+    let order = [['createdAt', 'DESC']]; // Default sort by newest
     if (q.sort === 'price') {
       order = [['price', 'ASC']];
     } else if (q.sort === '-price') {
       order = [['price', 'DESC']];
     } else if (q.sort === 'sales') {
       order = [['sales', 'DESC']];
+    } else if (q.sort === 'starNumber') {
+      order = [['starNumber', 'DESC']];
+    } else if (q.sort === 'totalStars') {
+      order = [['totalStars', 'DESC']];
+    } else if (q.sort === 'createdAt') {
+      order = [['createdAt', 'DESC']];
     }
 
     const gigs = await Gig.findAll({
@@ -135,12 +153,13 @@ const getGigs = async (req, res, next) => {
       include: [{
         model: User,
         as: 'user',
-        attributes: ['id', 'username', 'img', 'isSeller']
+        attributes: ['id', 'username', 'img', 'isSeller', 'country']
       }]
     });
 
     res.status(200).json(gigs);
   } catch (err) {
+    console.error("Error fetching gigs:", err);
     next(err);
   }
 };
