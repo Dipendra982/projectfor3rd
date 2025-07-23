@@ -14,6 +14,8 @@ import ReceivedOrders from "./pages/receivedOrders/ReceivedOrders"; // Import th
 import Messages from "./pages/messages/Messages";
 import Message from "./pages/message/Message";
 import MyGigs from "./pages/myGigs/MyGigs";
+import EmailVerification from "./pages/emailVerification/EmailVerification";
+import ResendVerification from "./pages/resendVerification/ResendVerification";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Pay from "./pages/pay/Pay";
 import Success from "./pages/success/Success";
@@ -77,6 +79,14 @@ function App() {
         {
           path: "/register",
           element: <Register />,
+        },
+        {
+          path: "/verify-email",
+          element: <EmailVerification />,
+        },
+        {
+          path: "/resend-verification",
+          element: <ResendVerification />,
         },
         {
           path: "/login",

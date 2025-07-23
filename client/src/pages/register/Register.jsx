@@ -35,12 +35,18 @@ function Register() {
 
     const url = await upload(file);
     try {
-      await newRequest.post("/auth/register", {
+      const response = await newRequest.post("/auth/register", {
         ...user,
         img: url,
       });
-      toast.success("User registered");
-      navigate("/login");
+      toast.success("Registration successful! Please check your email to verify your account.");
+      // Don't navigate to login immediately, let user verify email first
+      navigate("/login", { 
+        state: { 
+          message: "Please check your email and verify your account before logging in.",
+          email: user.email 
+        }
+      });
     } catch (err) {
       toast.error(err?.response?.data);
     }
