@@ -2,6 +2,7 @@ import React, { useReducer, useState } from "react";
 import "./Add.scss";
 import { gigReducer, INITIAL_STATE } from "../../reducers/gigReducer";
 import upload from "../../utils/upload";
+import uploadMultiple from "../../utils/uploadMultiple";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
 import { useNavigate } from "react-router-dom";
@@ -26,17 +27,14 @@ const Add = () => {
     setUploading(true);
     try {
       const cover = await upload(singleFile);
-
-      const images = await Promise.all(
-        [...files].map(async (file) => {
-          const url = await upload(file);
-          return url;
-        })
-      );
+      const images = await uploadMultiple([...files]);
+      
       setUploading(false);
       dispatch({ type: "ADD_IMAGES", payload: { cover, images } });
     } catch (err) {
       console.log(err);
+      setUploading(false);
+      toast.error("Upload failed. Please try again.");
     }
   };
 

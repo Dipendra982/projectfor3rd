@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import newRequest from "../../utils/newRequest";
 import { toast } from "react-toastify";
+import getImageUrl from "../../utils/getImageUrl";
 import "./Navbar.scss";
 
 function Navbar() {
@@ -43,7 +44,7 @@ function Navbar() {
                 Messages
               </Link>
               <div className="user" onClick={() => setOpen(!open)}>
-                <img src={currentUser.img || "/img/noavatar.jpg"} alt="" />
+                <img src={getImageUrl(currentUser.img)} alt="" />
                 <span>{currentUser?.username}</span>
                 {open && (
                   <div className="options">

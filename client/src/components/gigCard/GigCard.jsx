@@ -3,6 +3,7 @@ import "./GigCard.scss";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
+import getImageUrl from "../../utils/getImageUrl";
 
 const GigCard = ({ item }) => {
   const { isLoading, error, data } = useQuery({
@@ -21,7 +22,7 @@ const GigCard = ({ item }) => {
   return (
     <Link to={`/gig/${item._id}`} className="link">
       <div className="gigCard">
-        <img src={item.cover} alt={item.title} />
+        <img src={getImageUrl(item.cover)} alt={item.title} />
         <div className="info">
           {isLoading ? (
             "Loading..."
@@ -29,7 +30,7 @@ const GigCard = ({ item }) => {
             "Something went wrong!"
           ) : (
             <div className="user">
-              <img src={data.img || "/img/noavatar.jpg"} alt={data.username} />
+              <img src={getImageUrl(data.img)} alt={data.username} />
               <span>{data.username}</span>
             </div>
           )}

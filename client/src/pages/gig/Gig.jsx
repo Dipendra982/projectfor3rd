@@ -5,6 +5,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
 import getCurrentUser from "../../utils/getCurrentUser";
+import getImageUrl from "../../utils/getImageUrl";
 import Reviews from "../../components/reviews/Reviews";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -75,7 +76,7 @@ function Gig() {
               <div className="user">
                 <img
                   className="pp"
-                  src={dataUser.img || "/img/noavatar.jpg"}
+                  src={getImageUrl(dataUser.img)}
                   alt=""
                 />
                 <span>{dataUser.username}</span>
@@ -97,7 +98,7 @@ function Gig() {
             )}
             <Slider slidesToShow={1} arrowsScroll={1} className="slider">
               {data.gig.images.map((img) => (
-                <img key={img} src={img} alt="" />
+                <img key={img} src={getImageUrl(img)} alt="" />
               ))}
             </Slider>
             <h2>About This Gig</h2>
@@ -110,7 +111,7 @@ function Gig() {
               <div className="seller">
                 <h2>About The Seller</h2>
                 <div className="user">
-                  <img src={dataUser.img || "/img/noavatar.jpg"} alt="" />
+                  <img src={getImageUrl(dataUser.img)} alt="" />
                   <div className="info">
                     <span>{dataUser.username}</span>
                     {!isNaN(data.gig.totalStars / data.gig.starNumber) && (
@@ -168,7 +169,7 @@ function Gig() {
                 <div className="recommendations">
                   {data.recommendedGigs.map((recGig) => (
                     <div key={recGig._id} className="recommendation-item">
-                      <img src={recGig.cover} alt={recGig.title} />
+                      <img src={getImageUrl(recGig.cover)} alt={recGig.title} />
                       <div className="info">
                         <h3>{recGig.title}</h3>
                         <p>${recGig.price}</p>

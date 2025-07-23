@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./ReceivedOrders.scss";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
+import getImageUrl from "../../utils/getImageUrl";
 
 const ReceivedOrders = () => {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -87,7 +88,7 @@ const ReceivedOrders = () => {
                 {data.map((order) => (
                   <tr key={order._id}>
                     <td>
-                      <img className="image" src={order.img} alt="" />
+                      <img className="image" src={getImageUrl(order.img)} alt="" />
                     </td>
                     <td>{order.title}</td>
                     <td>{order.price}</td>

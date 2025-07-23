@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { Link, useParams } from "react-router-dom";
 import newRequest from "../../utils/newRequest";
+import getImageUrl from "../../utils/getImageUrl";
 import "./Message.scss";
 
 const Message = () => {
@@ -75,9 +76,9 @@ const Message = () => {
               key={m._id}
             >
               <img
-                src={
+                src={getImageUrl(
                   m.userId === currentUser._id ? currentUser.img : otherUser.img
-                }
+                )}
                 alt="Avatar"
               />
               <p>{m.desc}</p>
