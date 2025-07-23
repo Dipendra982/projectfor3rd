@@ -22,5 +22,5 @@ const uploadMultiple = async (files) => {
     throw err;
   }
 };
-
+// sony
 export default uploadMultiple;
